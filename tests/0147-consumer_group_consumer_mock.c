@@ -111,7 +111,7 @@ static rd_bool_t is_heartbeat_request(rd_kafka_mock_request_t *request,
 static int wait_all_heartbeats_done(rd_kafka_mock_cluster_t *mcluster,
                                     int num,
                                     int confidence_interval) {
-        return test_mock_wait_maching_requests(
+        return test_mock_wait_matching_requests(
             mcluster, num, confidence_interval, is_heartbeat_request, NULL);
 }
 
