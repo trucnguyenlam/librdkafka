@@ -3,7 +3,7 @@
 librdkafka v2.5.2 is a maintenance release.
 
 * Fix for an infinite loop happening with cooperative-sticky assignor
-  under some particular conditions (#).
+  under some particular conditions (#4800).
 
 ## Fixes
 
@@ -16,7 +16,7 @@ librdkafka v2.5.2 is a maintenance release.
   That happened with some particular orders of members and potential 
   assignable partitions.
   Solved by removing the infinite loop cause.
-  Happening since: 1.6.0 (#).
+  Happening since: 1.6.0 (#4800).
 
 
 
