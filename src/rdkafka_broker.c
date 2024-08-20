@@ -1874,13 +1874,13 @@ static rd_kafka_buf_t *rd_kafka_waitresp_find(rd_kafka_broker_t *rkb,
                 rd_avg_add(&rkb->rkb_telemetry.rd_avg_current.rkb_avg_rtt,
                            rkbuf->rkbuf_ts_sent);
                 if (rkbuf->rkbuf_reqhdr.ApiKey == RD_KAFKAP_Fetch) {
-                        rd_avg_add(&rkb->rkb_telemetry.rd_avg_current
-                                        .rkb_avg_fetch_latency,
+                        rd_avg_add(&rkb->rkb_rk->rk_telemetry.rd_avg_current
+                                        .rk_avg_fetch_latency,
                                    rkbuf->rkbuf_ts_sent);
                 } else if (rkbuf->rkbuf_reqhdr.ApiKey ==
                            RD_KAFKAP_OffsetCommit) {
-                        rd_avg_add(&rkb->rkb_telemetry.rd_avg_current
-                                        .rkb_avg_commit_latency,
+                        rd_avg_add(&rkb->rkb_rk->rk_telemetry.rd_avg_current
+                                        .rk_avg_commit_latency,
                                    rkbuf->rkbuf_ts_sent);
                 }
                 if (rkbuf->rkbuf_flags & RD_KAFKA_OP_F_BLOCKING &&

@@ -219,7 +219,7 @@ static const rd_kafka_telemetry_metric_info_t RD_KAFKA_TELEMETRY_CONSUMER_METRIC
                             "consumer coordinator.",
              .unit          = "ms",
              .is_int        = rd_false,
-             .is_per_broker = rd_true,
+             .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_GAUGE},
         [RD_KAFKA_TELEMETRY_METRIC_CONSUMER_COORDINATOR_REBALANCE_LATENCY_MAX] =
             {.name        = "consumer.coordinator.rebalance.latency.max",
@@ -227,7 +227,7 @@ static const rd_kafka_telemetry_metric_info_t RD_KAFKA_TELEMETRY_CONSUMER_METRIC
                             "consumer coordinator.",
              .unit          = "ms",
              .is_int        = rd_true,
-             .is_per_broker = rd_true,
+             .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_GAUGE},
         [RD_KAFKA_TELEMETRY_METRIC_CONSUMER_COORDINATOR_REBALANCE_LATENCY_TOTAL] =
             {.name        = "consumer.coordinator.rebalance.latency.total",
@@ -235,23 +235,23 @@ static const rd_kafka_telemetry_metric_info_t RD_KAFKA_TELEMETRY_CONSUMER_METRIC
                             "consumer coordinator.",
              .unit          = "ms",
              .is_int        = rd_true,
-             .is_per_broker = rd_true,
+             .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_SUM},
         [RD_KAFKA_TELEMETRY_METRIC_CONSUMER_FETCH_MANAGER_FETCH_LATENCY_AVG] =
-            {.name = "consumer.fetch.manager.fetch.latency.avg ",
+            {.name = "consumer.fetch.manager.fetch.latency.avg",
              .description =
                  "The average fetch latency in ms for the fetch manager.",
              .unit          = "ms",
              .is_int        = rd_false,
-             .is_per_broker = rd_true,
+             .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_GAUGE},
         [RD_KAFKA_TELEMETRY_METRIC_CONSUMER_FETCH_MANAGER_FETCH_LATENCY_MAX] =
-            {.name = "consumer.fetch.manager.fetch.latency.max ",
+            {.name = "consumer.fetch.manager.fetch.latency.max",
              .description =
                  "The maximum fetch latency in ms for the fetch manager.",
              .unit          = "ms",
              .is_int        = rd_true,
-             .is_per_broker = rd_true,
+             .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_GAUGE},
         [RD_KAFKA_TELEMETRY_METRIC_CONSUMER_POLL_IDLE_RATIO_AVG] =
             {.name        = "consumer.poll.idle.ratio.avg",
@@ -261,20 +261,21 @@ static const rd_kafka_telemetry_metric_info_t RD_KAFKA_TELEMETRY_CONSUMER_METRIC
              .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_GAUGE},
         [RD_KAFKA_TELEMETRY_METRIC_CONSUMER_COORDINATOR_COMMIT_LATENCY_AVG] =
-            {.name        = "consumer.coordinator.commit.latency.avg ",
+            {.name        = "consumer.coordinator.commit.latency.avg",
              .description = "The average commit latency in ms for the consumer "
                             "coordinator.",
              .unit          = "ms",
              .is_int        = rd_false,
-             .is_per_broker = rd_true,
+
+             .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_GAUGE},
         [RD_KAFKA_TELEMETRY_METRIC_CONSUMER_COORDINATOR_COMMIT_LATENCY_MAX] =
-            {.name        = "consumer.coordinator.commit.latency.max ",
+            {.name        = "consumer.coordinator.commit.latency.max",
              .description = "The maximum commit latency in ms for the consumer "
                             "coordinator.",
              .unit          = "ms",
              .is_int        = rd_true,
-             .is_per_broker = rd_true,
+             .is_per_broker = rd_false,
              .type          = RD_KAFKA_TELEMETRY_METRIC_TYPE_GAUGE},
 };
 

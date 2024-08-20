@@ -31,6 +31,7 @@
 #include "opentelemetry/metrics.pb.h"
 
 #define THREE_ORDERS_MAGNITUDE 1000
+#define SIX_ORDERS_MAGNITUDE 1000000
 
 typedef struct {
         opentelemetry_proto_metrics_v1_Metric **metrics;
@@ -216,23 +217,11 @@ calculate_consumer_rebalance_latency_avg(rd_kafka_t *rk,
                                          rd_kafka_broker_t *rkb_selected,
                                          rd_ts_t now_ns) {
         rd_kafka_telemetry_metric_value_t avg_rebalance_time;
-        rd_kafka_broker_t *rkb;
         double avg = 0;
-        int count  = 0;
 
-        TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
-                rd_avg_t *rkb_avg_rebalance_latency_rollover =
-                    &rkb->rkb_telemetry.rd_avg_rollover
-                         .rkb_avg_rebalance_latency;
-                if (rkb_avg_rebalance_latency_rollover->ra_v.cnt) {
-                        avg =
-                            (avg * count +
-                             rkb_avg_rebalance_latency_rollover->ra_v.sum) /
-                            (double)(count + rkb_avg_rebalance_latency_rollover
-                                                 ->ra_v.cnt);
-                        count += rkb_avg_rebalance_latency_rollover->ra_v.cnt;
-                }
-        }
+        avg = rk->rk_telemetry.rd_avg_current.rk_avg_rebalance_latency.ra_v.avg;
+        if(rk->rk_telemetry.delta_temporality)
+            avg -= rk->rk_telemetry.rd_avg_rollover.rk_avg_rebalance_latency.ra_v.avg;
 
         avg_rebalance_time.double_value = avg / THREE_ORDERS_MAGNITUDE;
         return avg_rebalance_time;
@@ -243,15 +232,14 @@ calculate_consumer_rebalance_latency_max(rd_kafka_t *rk,
                                          rd_kafka_broker_t *rkb_selected,
                                          rd_ts_t now_ns) {
         rd_kafka_telemetry_metric_value_t max_rebalance_time;
-        rd_kafka_broker_t *rkb;
-
         max_rebalance_time.int_value = 0;
-        TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
-                max_rebalance_time.int_value =
-                    RD_MAX(max_rebalance_time.int_value,
-                           rkb->rkb_telemetry.rd_avg_rollover
-                               .rkb_avg_rebalance_latency.ra_v.maxv);
-        }
+
+        max_rebalance_time.int_value = rk->rk_telemetry.rd_avg_current
+                                        .rk_avg_rebalance_latency.ra_v.maxv;
+        if(rk->rk_telemetry.delta_temporality)
+            max_rebalance_time.int_value -= rk->rk_telemetry.rd_avg_rollover
+                                                .rk_avg_rebalance_latency.ra_v.maxv;
+
         max_rebalance_time.int_value = RD_CEIL_INTEGER_DIVISION(
             max_rebalance_time.int_value, THREE_ORDERS_MAGNITUDE);
         return max_rebalance_time;
@@ -261,19 +249,16 @@ static rd_kafka_telemetry_metric_value_t
 calculate_consumer_rebalance_latency_total(rd_kafka_t *rk,
                                            rd_kafka_broker_t *rkb_selected,
                                            rd_ts_t now_ns) {
-        rd_kafka_telemetry_metric_value_t max_rebalance_time;
-        rd_kafka_broker_t *rkb;
+        rd_kafka_telemetry_metric_value_t total_rebalance_time;
+        total_rebalance_time.int_value = 0;
+        total_rebalance_time.int_value = rk->rk_telemetry.rd_avg_current.rk_avg_rebalance_latency.ra_v.sum;
 
-        max_rebalance_time.int_value = 0;
-        TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
-                max_rebalance_time.int_value =
-                    RD_MAX(max_rebalance_time.int_value,
-                           rkb->rkb_telemetry.rd_avg_rollover
-                               .rkb_avg_rebalance_latency.ra_v.maxv);
-        }
-        max_rebalance_time.int_value = RD_CEIL_INTEGER_DIVISION(
-            max_rebalance_time.int_value, THREE_ORDERS_MAGNITUDE);
-        return max_rebalance_time;
+        if(!rk->rk_telemetry.delta_temporality)
+            total_rebalance_time.int_value += rk->rk_telemetry.rk_historic_c.rebalance_latency_total;
+
+        total_rebalance_time.int_value = RD_CEIL_INTEGER_DIVISION(
+            total_rebalance_time.int_value, THREE_ORDERS_MAGNITUDE);
+        return total_rebalance_time;
 }
 
 static rd_kafka_telemetry_metric_value_t
@@ -281,24 +266,14 @@ calculate_consumer_fetch_latency_avg(rd_kafka_t *rk,
                                      rd_kafka_broker_t *rkb_selected,
                                      rd_ts_t now_ns) {
         rd_kafka_telemetry_metric_value_t avg_fetch_time;
-        rd_kafka_broker_t *rkb;
         double avg = 0;
-        int count  = 0;
 
-        TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
-                rd_avg_t *rkb_avg_fetch_latency_rollover =
-                    &rkb->rkb_telemetry.rd_avg_rollover.rkb_avg_fetch_latency;
-                if (rkb_avg_fetch_latency_rollover->ra_v.cnt) {
-                        avg =
-                            (avg * count +
-                             rkb_avg_fetch_latency_rollover->ra_v.sum) /
-                            (double)(count +
-                                     rkb_avg_fetch_latency_rollover->ra_v.cnt);
-                        count += rkb_avg_fetch_latency_rollover->ra_v.cnt;
-                }
-        }
+        avg = rk->rk_telemetry.rd_avg_current.rk_avg_fetch_latency.ra_v.avg;
+        if(rk->rk_telemetry.delta_temporality)
+            avg -= rk->rk_telemetry.rd_avg_rollover.rk_avg_fetch_latency.ra_v.avg;
 
         avg_fetch_time.double_value = avg / THREE_ORDERS_MAGNITUDE;
+
         return avg_fetch_time;
 }
 
@@ -307,15 +282,13 @@ calculate_consumer_fetch_latency_max(rd_kafka_t *rk,
                                      rd_kafka_broker_t *rkb_selected,
                                      rd_ts_t now_ns) {
         rd_kafka_telemetry_metric_value_t max_fetch_time;
-        rd_kafka_broker_t *rkb;
-
         max_fetch_time.int_value = 0;
-        TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
-                max_fetch_time.int_value =
-                    RD_MAX(max_fetch_time.int_value,
-                           rkb->rkb_telemetry.rd_avg_rollover
-                               .rkb_avg_fetch_latency.ra_v.maxv);
-        }
+        max_fetch_time.int_value = rk->rk_telemetry.rd_avg_current
+                                    .rk_avg_fetch_latency.ra_v.maxv;
+        if(rk->rk_telemetry.delta_temporality)
+            max_fetch_time.int_value -= rk->rk_telemetry.rd_avg_rollover
+                                        .rk_avg_fetch_latency.ra_v.maxv;   
+
         max_fetch_time.int_value = RD_CEIL_INTEGER_DIVISION(
             max_fetch_time.int_value, THREE_ORDERS_MAGNITUDE);
         return max_fetch_time;
@@ -326,12 +299,16 @@ calculate_consumer_poll_idle_ratio_avg(rd_kafka_t *rk,
                                        rd_kafka_broker_t *rkb_selected,
                                        rd_ts_t now_ns) {
         rd_kafka_telemetry_metric_value_t avg_poll_idle_avg;
-        rd_kafka_broker_t *rkb;
+        double avg = 0;
+        avg = rk->rk_telemetry.rd_avg_current
+               .rk_avg_poll_idle_ratio.ra_v.avg;
+        
+        if(rk->rk_telemetry.delta_temporality)
+            avg -= rk->rk_telemetry.rd_avg_rollover
+                   .rk_avg_poll_idle_ratio.ra_v.avg;
 
-        avg_poll_idle_avg.double_value =
-            (double)(1.0 * rk->rk_telemetry.rk_avg_current
-                               .rk_avg_poll_idle_ratio.ra_v.avg) /
-            100;
+        avg_poll_idle_avg.double_value = avg / SIX_ORDERS_MAGNITUDE;
+
         return avg_poll_idle_avg;
 }
 
@@ -340,22 +317,11 @@ calculate_consumer_commit_latency_avg(rd_kafka_t *rk,
                                       rd_kafka_broker_t *rkb_selected,
                                       rd_ts_t now_ns) {
         rd_kafka_telemetry_metric_value_t avg_commit_time;
-        rd_kafka_broker_t *rkb;
         double avg = 0;
-        int count  = 0;
 
-        TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
-                rd_avg_t *rkb_avg_commit_latency_rollover =
-                    &rkb->rkb_telemetry.rd_avg_rollover.rkb_avg_commit_latency;
-                if (rkb_avg_commit_latency_rollover->ra_v.cnt) {
-                        avg =
-                            (avg * count +
-                             rkb_avg_commit_latency_rollover->ra_v.sum) /
-                            (double)(count +
-                                     rkb_avg_commit_latency_rollover->ra_v.cnt);
-                        count += rkb_avg_commit_latency_rollover->ra_v.cnt;
-                }
-        }
+        avg = rk->rk_telemetry.rd_avg_current.rk_avg_commit_latency.ra_v.avg;
+        if(rk->rk_telemetry.delta_temporality)
+            avg -= rk->rk_telemetry.rd_avg_rollover.rk_avg_commit_latency.ra_v.avg;
 
         avg_commit_time.double_value = avg / THREE_ORDERS_MAGNITUDE;
         return avg_commit_time;
@@ -366,24 +332,24 @@ calculate_consumer_commit_latency_max(rd_kafka_t *rk,
                                       rd_kafka_broker_t *rkb_selected,
                                       rd_ts_t now_ns) {
         rd_kafka_telemetry_metric_value_t max_commit_time;
-        rd_kafka_broker_t *rkb;
-
         max_commit_time.int_value = 0;
-        TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
-                max_commit_time.int_value =
-                    RD_MAX(max_commit_time.int_value,
-                           rkb->rkb_telemetry.rd_avg_rollover
-                               .rkb_avg_commit_latency.ra_v.maxv);
-        }
+
+        max_commit_time.int_value = rk->rk_telemetry.rd_avg_current
+                                    .rk_avg_commit_latency.ra_v.maxv;
+        if(rk->rk_telemetry.delta_temporality)
+            max_commit_time.int_value -= rk->rk_telemetry.rd_avg_rollover
+                                         .rk_avg_commit_latency.ra_v.maxv;
+
         max_commit_time.int_value = RD_CEIL_INTEGER_DIVISION(
             max_commit_time.int_value, THREE_ORDERS_MAGNITUDE);
+
         return max_commit_time;
 }
 
 static void reset_historical_metrics(rd_kafka_t *rk, rd_ts_t now_ns) {
         rd_kafka_broker_t *rkb;
-
         rk->rk_telemetry.rk_historic_c.ts_last = now_ns;
+        rk->rk_telemetry.rk_historic_c.rebalance_latency_total += (rk->rk_telemetry.rd_avg_rollover.rk_avg_rebalance_latency.ra_v.sum / THREE_ORDERS_MAGNITUDE);
         TAILQ_FOREACH(rkb, &rk->rk_brokers, rkb_link) {
                 rkb->rkb_telemetry.rkb_historic_c.connects =
                     rd_atomic32_get(&rkb->rkb_c.connects);
@@ -853,6 +819,29 @@ rd_buf_t *rd_kafka_telemetry_encode_metrics(rd_kafka_t *rk) {
         rd_avg_rollover(
             &rk->rk_telemetry.rk_avg_current.rk_avg_poll_idle_ratio,
             &rk->rk_telemetry.rk_avg_rollover.rk_avg_poll_idle_ratio);
+
+        rk->rk_telemetry.rk_ts_last_poll_start = 0;
+        rk->rk_telemetry.rk_ts_last_poll_end = 0;
+
+        if(rk->rk_type == RD_KAFKA_CONSUMER){
+            rd_avg_destroy(
+                &rk->rk_telemetry.rd_avg_rollover.rk_avg_poll_idle_ratio);
+            rd_avg_rollover(
+                &rk->rk_telemetry.rd_avg_current.rk_avg_poll_idle_ratio,
+                &rk->rk_telemetry.rd_avg_rollover.rk_avg_poll_idle_ratio);
+
+            rd_avg_destroy(&rk->rk_telemetry.rd_avg_rollover
+                                        .rk_avg_rebalance_latency);
+            rd_avg_rollover(&rk->rk_telemetry.rd_avg_rollover
+                                    .rk_avg_rebalance_latency,
+                            &rk->rk_telemetry.rd_avg_current
+                                    .rk_avg_rebalance_latency);
+            rd_avg_destroy(
+                &rk->rk_telemetry.rd_avg_rollover.rk_avg_fetch_latency);
+            rd_avg_rollover(
+                &rk->rk_telemetry.rd_avg_rollover.rk_avg_fetch_latency,
+                &rk->rk_telemetry.rd_avg_current.rk_avg_fetch_latency);
+        }
 
         int resource_attributes_count =
             resource_attributes(rk, &resource_attributes_struct);

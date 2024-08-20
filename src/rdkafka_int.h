@@ -692,22 +692,35 @@ struct rd_kafka_s {
                 int *matched_metrics;
                 size_t matched_metrics_cnt;
 
-                rd_ts_t ts_fetch_last;
-                rd_ts_t ts_fetch_cb_last;
+                rd_ts_t rk_ts_last_poll_start;
+                rd_ts_t rk_ts_last_poll_end;
 
                 struct {
                         rd_ts_t ts_last;  /**< Timestamp of last push */
                         rd_ts_t ts_start; /**< Timestamp from when collection
                                            *   started */
+                        rd_ts_t rebalance_latency_total; /* Total rebalance time in ms */
                 } rk_historic_c;
 
                 struct {
-                        rd_avg_t rk_avg_poll_idle_ratio;
-                } rk_avg_current;
+                        rd_avg_t rk_avg_poll_idle_ratio; /* Current Poll Idle Ratio avg */
+                        rd_avg_t rk_avg_rebalance_latency; /* Current rebalance
+                                                               latency avg */
+                        rd_avg_t rk_avg_fetch_latency; /* Current fetch latency
+                                                           avg */
+                        rd_avg_t rk_avg_commit_latency; /* Current commit
+                                                            latency avg */
+                } rd_avg_current;
 
                 struct {
-                        rd_avg_t rk_avg_poll_idle_ratio;
-                } rk_avg_rollover;
+                        rd_avg_t rk_avg_poll_idle_ratio; /* Rollover Poll Idle Ratio avg */
+                        rd_avg_t rk_avg_rebalance_latency; /* Rollover rebalance
+                                                               latency avg */
+                        rd_avg_t rk_avg_fetch_latency; /* Rollover fetch latency
+                                                           avg */
+                        rd_avg_t rk_avg_commit_latency; /* Rollover commit
+                                                            latency avg */
+                } rd_avg_rollover;
 
         } rk_telemetry;
 

@@ -206,12 +206,6 @@ struct rd_kafka_broker_s { /* rd_kafka_broker_t */
                                                              *   between buf_enq0
                                                              *   and writing to socket
                                                              */
-                        rd_avg_t rkb_avg_rebalance_latency; /* Current rebalance
-                                                               latency avg */
-                        rd_avg_t rkb_avg_fetch_latency; /* Current fetch latency
-                                                           avg */
-                        rd_avg_t rkb_avg_commit_latency; /* Current commit
-                                                            latency avg */
                 } rd_avg_current;
                 struct {
                         rd_avg_t rkb_avg_rtt; /**< Rolled over RTT avg */
@@ -219,13 +213,6 @@ struct rd_kafka_broker_s { /* rd_kafka_broker_t */
                             rkb_avg_throttle; /**< Rolled over throttle avg */
                         rd_avg_t rkb_avg_outbuf_latency; /**< Rolled over outbuf
                                                           *   latency avg */
-                        rd_avg_t
-                            rkb_avg_rebalance_latency;  /* Rolled over rebalance
-                                                           latency avg */
-                        rd_avg_t rkb_avg_fetch_latency; /* Rolled over fetch
-                                                           latency avg */
-                        rd_avg_t rkb_avg_commit_latency; /* Rolled over commit
-                                                            latency avg */
                 } rd_avg_rollover;
         } rkb_telemetry;
 
