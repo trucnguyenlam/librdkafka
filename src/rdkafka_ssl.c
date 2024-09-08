@@ -961,6 +961,63 @@ static int rd_kafka_ssl_probe_and_set_default_ca_location(rd_kafka_t *rk,
 #endif
 }
 
+static int cert_issuer_match(STACK_OF(X509_NAME) *ca_dn, X509 *x)
+{
+        int i;
+        X509_NAME *nm;
+        X509_NAME *issuer_dn = X509_get_issuer_name(x);
+
+        for (i = 0; i < sk_X509_NAME_num(ca_dn); i++) {
+                nm = sk_X509_NAME_value(ca_dn, i);
+                if (!X509_NAME_cmp(nm, issuer_dn)) {
+                        return 1;
+                }
+        }
+        return 0;
+}
+
+// Callback function for SSL_CTX_set_client_cert_cb
+static int client_cert_callback(SSL *ssl, void *arg) {
+        STACK_OF(X509_NAME) *ca_list;
+        STACK_OF(X509) *certs;
+        X509 *cert;
+        SSL_CTX *ctx;
+        int i;
+
+        // get SSL context
+        ctx = SSL_get_SSL_CTX(ssl);
+
+        // Get the accepted client CA list from the SSL context
+        ca_list = SSL_get_client_CA_list(ssl);
+        if (!ca_list) {
+                // no CA list, clear certs and return
+                SSL_certs_clear(ssl);
+                return 1;
+        }
+
+        // get cert from SSL context
+        cert = SSL_get_certificate(ssl);
+        if (cert != NULL && cert_issuer_match(ca_list, cert)) {
+                // A match is found, continue with certificate selection
+                return 1;
+        }
+
+        // get cert chain from SSL context
+        if (!SSL_CTX_get_extra_chain_certs(ctx, &certs)) {
+                return 1;
+        }
+
+        // Check if there's a match in the CA list
+        for (i = 0; i < sk_X509_num(certs); i++) {
+                cert = sk_X509_value(certs, i);
+                if (cert_issuer_match(ca_list, cert)) {
+                        return 1;  // A match is found, continue with certificate selection
+                }
+        }
+
+        SSL_certs_clear(ssl);
+        return 1;
+}
 
 /**
  * @brief Registers certificates, keys, etc, on the SSL_CTX
@@ -1435,6 +1492,8 @@ static int rd_kafka_ssl_set_certs(rd_kafka_t *rk,
                 rd_snprintf(errstr, errstr_size, "Private key check failed: ");
                 return -1;
         }
+
+        SSL_CTX_set_cert_cb(ctx, client_cert_callback, rk);
 
         return 0;
 }
